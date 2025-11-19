@@ -258,6 +258,17 @@
 
 支持**企业微信**(+ 微信推送方案)、**飞书**、**钉钉**、**Telegram**、**邮件**、**ntfy**、**Discord**，消息直达手机和邮箱
 
+### **英文翻译支持（v3.0.6 新增）**
+
+可选配置自动翻译所有中文标题为英文，方便国际用户或需要英文报告的场景
+
+- **智能翻译**：自动将中文新闻标题翻译为英文
+- **双语显示**：支持中英文对照显示或仅显示英文
+- **缓存优化**：已翻译内容自动缓存，提升性能
+- **全面支持**：所有通知渠道和HTML报告均支持翻译
+
+> 💡 配置方法详见 [配置详解 - 英文翻译功能](#3-英文翻译功能)
+
 ### **多端适配**
 - **GitHub Pages**：自动生成精美网页报告，PC/移动端适配
 - **Docker部署**：支持多架构容器化运行
@@ -1279,7 +1290,86 @@ OPPO
 
 </details>
 
-### 3. 推送模式详解
+### 3. 英文翻译功能
+
+<details>
+<summary>👉 点击展开：<strong>自动翻译标题为英文</strong></summary>
+<br>
+
+TrendRadar 支持自动将中文标题翻译为英文，方便非中文用户阅读或需要英文报告的场景。
+
+#### 配置说明
+
+在 `config/config.yaml` 文件的 `report` 部分配置翻译选项：
+
+```yaml
+report:
+  mode: "daily"
+  rank_threshold: 5
+  
+  # 翻译设置
+  translation:
+    enabled: false              # 是否启用自动翻译
+    show_original: true         # 是否同时显示原文
+    cache_translations: true    # 是否缓存翻译结果
+```
+
+#### 配置项说明
+
+| 配置项 | 类型 | 默认值 | 说明 |
+|--------|------|--------|------|
+| `enabled` | 布尔值 | `false` | 启用/禁用翻译功能 |
+| `show_original` | 布尔值 | `true` | `true`时显示"原标题 / Translated Title"<br>`false`时只显示"Translated Title" |
+| `cache_translations` | 布尔值 | `true` | 缓存翻译结果以避免重复API调用 |
+
+#### 使用示例
+
+**场景一：只需要英文（不显示原文）**
+```yaml
+translation:
+  enabled: true
+  show_original: false
+  cache_translations: true
+```
+显示效果：`BYD monthly sales hit record`
+
+**场景二：中英文对照（推荐）**
+```yaml
+translation:
+  enabled: true
+  show_original: true
+  cache_translations: true
+```
+显示效果：`比亚迪月销量破纪录 / BYD monthly sales hit record`
+
+#### 功能特点
+
+✅ **智能缓存**：已翻译的标题会被缓存，避免重复调用翻译API  
+✅ **失败降级**：翻译失败时自动显示原文，不影响正常使用  
+✅ **全面支持**：支持所有通知渠道（飞书、钉钉、企业微信、Telegram等）和HTML报告  
+✅ **零成本**：使用免费的Google翻译API，无需额外费用
+
+#### 注意事项
+
+1. **网络要求**：翻译功能需要能够访问Google翻译服务
+2. **首次运行**：第一次翻译时可能较慢，之后会使用缓存加速
+3. **缓存位置**：翻译缓存保存在 `output/.translation_cache.json`
+4. **环境变量**：可通过 `TRANSLATION_ENABLED=true` 环境变量启用翻译
+
+#### Docker环境变量
+
+Docker用户可以通过环境变量覆盖配置：
+
+```bash
+docker run -d --name trend-radar \
+  -e TRANSLATION_ENABLED="true" \
+  # ... 其他配置
+  wantcat/trendradar:latest
+```
+
+</details>
+
+### 4. 推送模式详解
 
 <details>
 <summary>👉 点击展开：<strong>三种推送模式详细对比</strong></summary>
@@ -1316,7 +1406,7 @@ OPPO
 
 </details>
 
-### 4. 热点权重调整
+### 5. 热点权重调整
 
 <details>
 <summary>👉 点击展开：<strong>热点权重调整</strong></summary>
@@ -1353,7 +1443,7 @@ weight:
 
 </details>
 
-### 5. 推送格式参考
+### 6. 推送格式参考
 
 <details>
 <summary>👉 点击展开：<strong>推送格式说明</strong></summary>

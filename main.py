@@ -19,8 +19,17 @@ import pytz
 import requests
 import yaml
 
+# Translation support
+try:
+    from googletrans import Translator
+    TRANSLATION_AVAILABLE = True
+except ImportError:
+    TRANSLATION_AVAILABLE = False
+    print("Warning: googletrans not installed. Translation feature will be disabled.")
+
 
 VERSION = "3.0.5"
+
 
 
 # === SMTP邮件配置 ===
@@ -49,6 +58,110 @@ SMTP_CONFIGS = {
     # 搜狐邮箱（使用 SSL）
     "sohu.com": {"server": "smtp.sohu.com", "port": 465, "encryption": "SSL"},
 }
+
+
+# === Translation Manager ===
+class TranslationManager:
+    """Translation manager with caching support"""
+    
+    def __init__(self):
+        self.enabled = False
+        self.show_original = True
+        self.cache_enabled = True
+        self.translator = None
+        self.cache = {}
+        self.cache_file = Path("output") / ".translation_cache.json"
+        
+        # Load configuration when CONFIG is available
+        if 'CONFIG' in globals():
+            self._load_config()
+    
+    def _load_config(self):
+        """Load translation configuration"""
+        self.enabled = CONFIG["TRANSLATION"]["ENABLED"]
+        self.show_original = CONFIG["TRANSLATION"]["SHOW_ORIGINAL"]
+        self.cache_enabled = CONFIG["TRANSLATION"]["CACHE_TRANSLATIONS"]
+        
+        if self.enabled and TRANSLATION_AVAILABLE:
+            self.translator = Translator()
+            if self.cache_enabled:
+                self._load_cache()
+        elif self.enabled and not TRANSLATION_AVAILABLE:
+            print("Warning: Translation enabled but googletrans not available")
+            self.enabled = False
+    
+    def _load_cache(self):
+        """Load translation cache from file"""
+        try:
+            if self.cache_file.exists():
+                with open(self.cache_file, 'r', encoding='utf-8') as f:
+                    self.cache = json.load(f)
+                print(f"Loaded {len(self.cache)} cached translations")
+        except Exception as e:
+            print(f"Failed to load translation cache: {e}")
+            self.cache = {}
+    
+    def _save_cache(self):
+        """Save translation cache to file"""
+        try:
+            ensure_directory_exists(str(self.cache_file.parent))
+            with open(self.cache_file, 'w', encoding='utf-8') as f:
+                json.dump(self.cache, f, ensure_ascii=False, indent=2)
+        except Exception as e:
+            print(f"Failed to save translation cache: {e}")
+    
+    def translate(self, text: str, src: str = 'zh-cn', dest: str = 'en') -> Optional[str]:
+        """Translate text from source language to destination language"""
+        if not self.enabled or not text:
+            return None
+        
+        # Check cache first
+        cache_key = f"{src}:{dest}:{text}"
+        if self.cache_enabled and cache_key in self.cache:
+            return self.cache[cache_key]
+        
+        # Translate
+        try:
+            if not self.translator:
+                self.translator = Translator()
+            
+            result = self.translator.translate(text, src=src, dest=dest)
+            translation = result.text
+            
+            # Cache the result
+            if self.cache_enabled:
+                self.cache[cache_key] = translation
+                # Save cache periodically (every 10 translations)
+                if len(self.cache) % 10 == 0:
+                    self._save_cache()
+            
+            return translation
+        except Exception as e:
+            print(f"Translation failed for '{text[:50]}...': {e}")
+            return None
+    
+    def format_translated_title(self, original: str, translated: Optional[str] = None) -> str:
+        """Format title with optional translation"""
+        if not translated:
+            translated = self.translate(original)
+        
+        if not translated:
+            return original
+        
+        if self.show_original:
+            return f"{original} / {translated}"
+        else:
+            return translated
+    
+    def finalize(self):
+        """Save cache and cleanup"""
+        if self.cache_enabled and self.cache:
+            self._save_cache()
+
+
+# Global translation manager instance (initialized after CONFIG is loaded)
+translation_manager = None
+
 
 
 # === 配置管理 ===
@@ -129,6 +242,20 @@ def load_config():
             "HOTNESS_WEIGHT": config_data["weight"]["hotness_weight"],
         },
         "PLATFORMS": config_data["platforms"],
+        "TRANSLATION": {
+            "ENABLED": os.environ.get("TRANSLATION_ENABLED", "").strip().lower()
+            in ("true", "1")
+            if os.environ.get("TRANSLATION_ENABLED", "").strip()
+            else config_data["report"]
+            .get("translation", {})
+            .get("enabled", False),
+            "SHOW_ORIGINAL": config_data["report"]
+            .get("translation", {})
+            .get("show_original", True),
+            "CACHE_TRANSLATIONS": config_data["report"]
+            .get("translation", {})
+            .get("cache_translations", True),
+        },
     }
 
     # Notification channel configuration (environment variables take priority)
@@ -225,6 +352,12 @@ print("Loading configuration...")
 CONFIG = load_config()
 print(f"TrendRadar v{VERSION} configuration loaded")
 print(f"Number of monitoring platforms: {len(CONFIG['PLATFORMS'])}")
+
+# Initialize translation manager
+translation_manager = TranslationManager()
+if CONFIG["TRANSLATION"]["ENABLED"]:
+    print(f"Translation feature enabled (Show original: {CONFIG['TRANSLATION']['SHOW_ORIGINAL']})")
+
 
 
 # === Tool Functions ===
@@ -1458,6 +1591,11 @@ def format_title_for_platform(
     link_url = title_data["mobile_url"] or title_data["url"]
 
     cleaned_title = clean_title(title_data["title"])
+    
+    # Apply translation if enabled
+    if translation_manager and translation_manager.enabled:
+        cleaned_title = translation_manager.format_translated_title(cleaned_title)
+
 
     if platform == "feishu":
         if link_url:
@@ -2238,7 +2376,21 @@ def render_html_content(
                             <div class="news-title">"""
 
                 # 处理标题和链接
-                escaped_title = html_escape(title_data["title"])
+                original_title = html_escape(title_data["title"])
+                
+                # Apply translation if enabled
+                if translation_manager and translation_manager.enabled:
+                    translated_title = translation_manager.translate(title_data["title"])
+                    if translated_title:
+                        if translation_manager.show_original:
+                            escaped_title = f'{original_title}<br><span style="color: #666; font-size: 0.9em;">{html_escape(translated_title)}</span>'
+                        else:
+                            escaped_title = html_escape(translated_title)
+                    else:
+                        escaped_title = original_title
+                else:
+                    escaped_title = original_title
+                    
                 link_url = title_data.get("mobile_url") or title_data.get("url", "")
 
                 if link_url:
@@ -2297,7 +2449,21 @@ def render_html_content(
                                 <div class="new-item-title">"""
 
                 # 处理新增新闻的链接
-                escaped_title = html_escape(title_data["title"])
+                original_title = html_escape(title_data["title"])
+                
+                # Apply translation if enabled
+                if translation_manager and translation_manager.enabled:
+                    translated_title = translation_manager.translate(title_data["title"])
+                    if translated_title:
+                        if translation_manager.show_original:
+                            escaped_title = f'{original_title}<br><span style="color: #666; font-size: 0.9em;">{html_escape(translated_title)}</span>'
+                        else:
+                            escaped_title = html_escape(translated_title)
+                    else:
+                        escaped_title = original_title
+                else:
+                    escaped_title = original_title
+                    
                 link_url = title_data.get("mobile_url") or title_data.get("url", "")
 
                 if link_url:
@@ -4745,6 +4911,10 @@ def main():
     except Exception as e:
         print(f"❌ Program execution error: {e}")
         raise
+    finally:
+        # Save translation cache before exit
+        if translation_manager:
+            translation_manager.finalize()
 
 
 if __name__ == "__main__":

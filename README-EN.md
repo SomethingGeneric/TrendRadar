@@ -192,7 +192,18 @@ No longer controlled by platform algorithms, TrendRadar reorganizes all trending
 
 ### **Multi-Channel Real-Time Push**
 
-Supports **WeWork** (+ WeChat push solution), **Feishu**, **DingTalk**, **Telegram**, **Email**, **ntfy** — messages delivered directly to phone and email.
+Supports **WeWork** (+ WeChat push solution), **Feishu**, **DingTalk**, **Telegram**, **Email**, **ntfy**, **Discord** — messages delivered directly to phone and email.
+
+### **English Translation Support (v3.0.6 New)**
+
+Optional configuration to auto-translate all Chinese headlines to English, convenient for international users or scenarios requiring English reports.
+
+- **Smart Translation**: Automatically translate Chinese news headlines to English
+- **Bilingual Display**: Support Chinese-English side-by-side or English-only display
+- **Cache Optimization**: Translated content automatically cached for performance
+- **Full Support**: All notification channels and HTML reports support translation
+
+> 💡 Configuration details in [Configuration Guide - English Translation](#3-english-translation-feature)
 
 ### **Multi-Platform Support**
 - **GitHub Pages**: Auto-generate beautiful web reports, PC/mobile adapted
@@ -1176,7 +1187,86 @@ sales
 
 </details>
 
-### 3. Push Mode Details
+### 3. English Translation Feature
+
+<details>
+<summary>👉 Click to expand: <strong>Auto-Translate Headlines to English</strong></summary>
+<br>
+
+TrendRadar supports automatic translation of Chinese headlines to English, making it convenient for non-Chinese users or scenarios requiring English reports.
+
+#### Configuration
+
+Configure translation options in the `report` section of `config/config.yaml`:
+
+```yaml
+report:
+  mode: "daily"
+  rank_threshold: 5
+  
+  # Translation settings
+  translation:
+    enabled: false              # Enable auto-translation
+    show_original: true         # Show original text alongside translation
+    cache_translations: true    # Cache translation results
+```
+
+#### Configuration Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `enabled` | Boolean | `false` | Enable/disable translation feature |
+| `show_original` | Boolean | `true` | When `true`, displays "原标题 / Translated Title"<br>When `false`, displays only "Translated Title" |
+| `cache_translations` | Boolean | `true` | Cache translation results to avoid duplicate API calls |
+
+#### Usage Examples
+
+**Scenario 1: English Only (hide original)**
+```yaml
+translation:
+  enabled: true
+  show_original: false
+  cache_translations: true
+```
+Display: `BYD monthly sales hit record`
+
+**Scenario 2: Bilingual Display (recommended)**
+```yaml
+translation:
+  enabled: true
+  show_original: true
+  cache_translations: true
+```
+Display: `比亚迪月销量破纪录 / BYD monthly sales hit record`
+
+#### Features
+
+✅ **Smart Caching**: Translated headlines are cached to avoid repeated API calls  
+✅ **Graceful Degradation**: Shows original text if translation fails  
+✅ **Full Support**: All notification channels (Feishu, DingTalk, WeChat, Telegram, etc.) and HTML reports  
+✅ **Zero Cost**: Uses free Google Translate API
+
+#### Notes
+
+1. **Network Requirements**: Translation requires access to Google Translate service
+2. **First Run**: Initial translations may be slow; subsequent uses leverage cache
+3. **Cache Location**: Translation cache saved in `output/.translation_cache.json`
+4. **Environment Variable**: Can enable via `TRANSLATION_ENABLED=true` environment variable
+
+#### Docker Environment Variable
+
+Docker users can override configuration via environment variables:
+
+```bash
+docker run -d --name trend-radar \
+  -e TRANSLATION_ENABLED="true" \
+  # ... other config
+  wantcat/trendradar:latest
+```
+
+</details>
+
+### 4. Push Mode Details
 
 <details>
 <summary>👉 Click to expand: <strong>Three Push Modes Detailed Comparison</strong></summary>
@@ -1213,7 +1303,7 @@ Assume you monitor "Apple" keyword, execute once per hour:
 
 </details>
 
-### 4. Advanced Configuration - Hotspot Weight Adjustment
+### 5. Advanced Configuration - Hotspot Weight Adjustment
 
 <details>
 <summary>👉 Click to expand: <strong>Hotspot Weight Adjustment</strong></summary>
@@ -1250,7 +1340,7 @@ Core idea: Users pursuing speed and timeliness increase ranking weight, users pu
 
 </details>
 
-### 5. Push Format Reference
+### 6. Push Format Reference
 
 <details>
 <summary>👉 Click to expand: <strong>Push Format Explanation</strong></summary>
