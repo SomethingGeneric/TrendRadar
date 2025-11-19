@@ -68,6 +68,7 @@ notification:
     ntfy_server_url: "https://ntfy.sh" # ntfy server address, default uses public service, can change to self-hosted address
     ntfy_topic: "" # ntfy topic name
     ntfy_token: "" # ntfy access token (optional, for private topics)
+    discord_webhook_url: "" # Discord webhook URL
 
 # Used to make news with higher attention appear earlier, i.e., use algorithm to reorganize trending searches from different platforms to form your prioritized trending topics. Total should equal 1.
 weight:
