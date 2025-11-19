@@ -1,3 +1,84 @@
+# TrendRadar Frequency Words Configuration
+# 
+# This file defines keywords to filter and organize trending news.
+# Empty lines separate different keyword groups for independent tracking.
+#
+# Syntax:
+# - Normal words: Match any occurrence (e.g., "Tesla", "AI")
+# - Required words (+): Must appear together (e.g., +launch, +release)
+# - Filter words (!): Exclude news containing these (e.g., !advertisement, !spam)
+#
+# English Examples:
+# Replace these with your interests or keep Chinese sources for Chinese news monitoring
+
+# Technology Companies
+Tesla
+Elon Musk
+SpaceX
+
+Microsoft
+OpenAI
+ChatGPT
+Sora
+
+Google
+Gemini
+DeepMind
+
+NVIDIA
+Jensen Huang
+
+Apple
+iPhone
+iPad
+Mac
+iOS
+
+# AI & Technology
+AI
+!gai
+Artificial Intelligence
+Machine Learning
+Deep Learning
+
+ChatGPT
+Claude
+Anthropic
+
+Robotics
+Autonomous Driving
+Self-Driving
+
+# Hardware & Chips
+Semiconductor
+Chip
+GPU
+CPU
+
+# Countries & Regions
+United States
+China
+Japan
+Korea
+Europe
+
+# Energy & Environment
+Nuclear Energy
+Renewable Energy
+Climate Change
+Solar Power
+
+# Space & Aviation
+Moon
+Mars
+Space
+Spacecraft
+Rocket
+Aviation
+
+# Original Chinese Keywords (for monitoring Chinese platforms)
+# Keep these if monitoring Chinese news sources
+
 胖东来
 于东来
 
@@ -53,10 +134,8 @@ bytedance
 马斯克
 
 微软
-Microsoft
 
 英伟达
-NVIDIA
 黄仁勋
 
 AMD
@@ -71,7 +150,6 @@ openai
 sora
 
 claude
-Anthropic
 
 iphone
 ipad
@@ -79,7 +157,6 @@ mac
 ios
 
 ai
-!gai
 人工智能
 
 自动驾驶
