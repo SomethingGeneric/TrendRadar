@@ -327,9 +327,9 @@ def html_escape(text: str) -> str:
     )
 
 
-# === 推送记录管理 ===
+# === Push Record Management ===
 class PushRecordManager:
-    """推送记录管理器"""
+    """Push record manager"""
 
     def __init__(self):
         self.record_dir = Path("output") / ".push_records"
@@ -337,16 +337,16 @@ class PushRecordManager:
         self.cleanup_old_records()
 
     def ensure_record_dir(self):
-        """确保记录目录存在"""
+        """Ensure record directory exists"""
         self.record_dir.mkdir(parents=True, exist_ok=True)
 
     def get_today_record_file(self) -> Path:
-        """获取今天的记录文件路径"""
+        """Get today's record file path"""
         today = get_beijing_time().strftime("%Y%m%d")
         return self.record_dir / f"push_record_{today}.json"
 
     def cleanup_old_records(self):
-        """清理过期的推送记录"""
+        """Clean up expired push records"""
         retention_days = CONFIG["PUSH_WINDOW"]["RECORD_RETENTION_DAYS"]
         current_time = get_beijing_time()
 
@@ -430,9 +430,9 @@ class PushRecordManager:
         return result
 
 
-# === 数据获取 ===
+# === Data Fetching ===
 class DataFetcher:
-    """数据获取器"""
+    """Data fetcher"""
 
     def __init__(self, proxy_url: Optional[str] = None):
         self.proxy_url = proxy_url
@@ -444,7 +444,7 @@ class DataFetcher:
         min_retry_wait: int = 3,
         max_retry_wait: int = 5,
     ) -> Tuple[Optional[str], str, str]:
-        """获取指定ID数据，支持重试"""
+        """Fetch data for specified ID, supports retry"""
         if isinstance(id_info, tuple):
             id_value, alias = id_info
         else:
@@ -502,7 +502,7 @@ class DataFetcher:
         ids_list: List[Union[str, Tuple[str, str]]],
         request_interval: int = CONFIG["REQUEST_INTERVAL"],
     ) -> Tuple[Dict, Dict, List]:
-        """爬取多个网站数据"""
+        """Crawl multiple website data"""
         results = {}
         id_to_name = {}
         failed_ids = []
@@ -552,9 +552,9 @@ class DataFetcher:
         return results, id_to_name, failed_ids
 
 
-# === 数据处理 ===
+# === Data Processing ===
 def save_titles_to_file(results: Dict, id_to_name: Dict, failed_ids: List) -> str:
-    """保存标题到文件"""
+    """Save titles to file"""
     file_path = get_output_path("txt", f"{format_time_filename()}.txt")
 
     with open(file_path, "w", encoding="utf-8") as f:
@@ -606,7 +606,7 @@ def save_titles_to_file(results: Dict, id_to_name: Dict, failed_ids: List) -> st
 def load_frequency_words(
     frequency_file: Optional[str] = None,
 ) -> Tuple[List[Dict], List[str]]:
-    """加载频率词配置"""
+    """Load frequency word configuration"""
     if frequency_file is None:
         frequency_file = os.environ.get(
             "FREQUENCY_WORDS_PATH", "config/frequency_words.txt"
@@ -658,7 +658,7 @@ def load_frequency_words(
 
 
 def parse_file_titles(file_path: Path) -> Tuple[Dict, Dict]:
-    """解析单个txt文件的标题数据，返回(titles_by_id, id_to_name)"""
+    """Parse title data from a single txt file, returns (titles_by_id, id_to_name)"""
     titles_by_id = {}
     id_to_name = {}
 
@@ -4097,7 +4097,7 @@ class NewsAnalyzer:
                 }
                 print(f"发现新版本: {remote_version} (当前: {VERSION})")
             else:
-                print("版本检查完成，当前为最新版本")
+                print("Version check complete, current version is up to date")
         except Exception as e:
             print(f"版本检查出错: {e}")
 
@@ -4266,7 +4266,7 @@ class NewsAnalyzer:
             )
             return True
         elif CONFIG["ENABLE_NOTIFICATION"] and not has_notification:
-            print("⚠️ 警告：通知功能已启用但未配置任何通知渠道，将跳过通知发送")
+            print("⚠️ Warning: Notification feature is enabled but no notification channels configured, skipping notification sending")
         elif not CONFIG["ENABLE_NOTIFICATION"]:
             print(f"跳过{report_type}通知：通知功能已禁用")
         elif (
@@ -4460,8 +4460,8 @@ class NewsAnalyzer:
                         html_file_path=html_file,
                     )
             else:
-                print("❌ 严重错误：无法读取刚保存的数据文件")
-                raise RuntimeError("数据一致性检查失败：保存后立即读取失败")
+                print("❌ Critical error: Unable to read just-saved data file")
+                raise RuntimeError("Data consistency check failed: read failed immediately after save")
         else:
             title_info = self._prepare_current_title_info(results, time_info)
             stats, html_file = self._run_analysis_pipeline(
@@ -4540,13 +4540,13 @@ def main():
         analyzer = NewsAnalyzer()
         analyzer.run()
     except FileNotFoundError as e:
-        print(f"❌ 配置文件错误: {e}")
-        print("\n请确保以下文件存在:")
+        print(f"❌ Configuration file error: {e}")
+        print("\nPlease ensure the following files exist:")
         print("  • config/config.yaml")
         print("  • config/frequency_words.txt")
-        print("\n参考项目文档进行正确配置")
+        print("\nRefer to project documentation for correct configuration")
     except Exception as e:
-        print(f"❌ 程序运行错误: {e}")
+        print(f"❌ Program execution error: {e}")
         raise
 
 
