@@ -179,6 +179,11 @@ def load_config():
         "ntfy_token", ""
     )
 
+    # Discord配置
+    config["DISCORD_WEBHOOK_URL"] = os.environ.get(
+        "DISCORD_WEBHOOK_URL", ""
+    ).strip() or webhooks.get("discord_webhook_url", "")
+
     # Output configuration source information
     notification_sources = []
     if config["FEISHU_WEBHOOK_URL"]:
@@ -203,6 +208,10 @@ def load_config():
     if config["NTFY_SERVER_URL"] and config["NTFY_TOPIC"]:
         server_source = "Environment Variable" if os.environ.get("NTFY_SERVER_URL") else "Config File"
         notification_sources.append(f"ntfy({server_source})")
+
+    if config["DISCORD_WEBHOOK_URL"]:
+        source = "Environment Variable" if os.environ.get("DISCORD_WEBHOOK_URL") else "Config File"
+        notification_sources.append(f"Discord({source})")
 
     if notification_sources:
         print(f"Notification channel configuration sources: {', '.join(notification_sources)}")
@@ -3339,6 +3348,7 @@ def send_to_notifications(
     ntfy_server_url = CONFIG["NTFY_SERVER_URL"]
     ntfy_topic = CONFIG["NTFY_TOPIC"]
     ntfy_token = CONFIG.get("NTFY_TOKEN", "")
+    discord_webhook_url = CONFIG["DISCORD_WEBHOOK_URL"]
 
     update_info_to_send = update_info if CONFIG["SHOW_VERSION_UPDATE"] else None
 
@@ -3395,6 +3405,18 @@ def send_to_notifications(
             html_file_path,
             email_smtp_server,
             email_smtp_port,
+        )
+
+    # 发送到 Discord
+    if discord_webhook_url:
+        results["discord"] = send_to_discord(
+            discord_webhook_url,
+            report_data,
+            report_type,
+            update_info_to_send,
+            proxy_url,
+            mode,
+            html_file_path,
         )
 
     if not results:
@@ -4007,6 +4029,180 @@ def send_to_ntfy(
         return False
 
 
+def send_to_discord(
+    webhook_url: str,
+    report_data: Dict,
+    report_type: str,
+    update_info: Optional[Dict] = None,
+    proxy_url: Optional[str] = None,
+    mode: str = "daily",
+    html_file_path: Optional[str] = None,
+) -> bool:
+    """发送到Discord（支持分批发送和链接推送）
+    
+    Discord webhook特点：
+    - 支持Markdown格式
+    - 消息长度限制：2000字符
+    - 支持嵌入(Embed)消息，限制6000字符
+    - 本实现使用Embed来发送格式化的新闻报告
+    """
+    headers = {"Content-Type": "application/json"}
+    proxies = None
+    if proxy_url:
+        proxies = {"http": proxy_url, "https": proxy_url}
+
+    now = get_beijing_time()
+    
+    # 如果提供了HTML文件路径，尝试构建可访问的URL
+    report_url = None
+    if html_file_path:
+        # 对于GitHub Pages部署，构建公开访问的URL
+        # 格式：https://username.github.io/TrendRadar/output/日期/html/文件名.html
+        try:
+            # 提取日期和文件名信息
+            path_obj = Path(html_file_path)
+            if "output" in path_obj.parts:
+                output_idx = path_obj.parts.index("output")
+                # 获取日期文件夹和HTML文件名
+                date_folder = path_obj.parts[output_idx + 1] if len(path_obj.parts) > output_idx + 1 else ""
+                html_folder = path_obj.parts[output_idx + 2] if len(path_obj.parts) > output_idx + 2 else ""
+                filename = path_obj.name
+                
+                # 尝试从环境变量获取GitHub仓库信息
+                github_repo = os.environ.get("GITHUB_REPOSITORY", "")
+                if github_repo:
+                    # 格式：owner/repo
+                    owner = github_repo.split("/")[0] if "/" in github_repo else ""
+                    if owner:
+                        report_url = f"https://{owner}.github.io/TrendRadar/output/{date_folder}/{html_folder}/{filename}"
+        except Exception as e:
+            print(f"构建报告URL失败: {e}")
+    
+    # 获取分批内容 - Discord使用较小的批次大小
+    batches = split_content_into_batches(
+        report_data, "wework", update_info, max_bytes=1800, mode=mode  # 使用wework格式，更接近Discord的Markdown
+    )
+    
+    total_batches = len(batches)
+    print(f"Discord消息分为 {total_batches} 批次发送 [{report_type}]")
+    
+    # 发送第一个消息，包含报告链接
+    first_message_sent = False
+    
+    # 如果有报告URL，先发送包含链接的消息
+    if report_url:
+        link_embed = {
+            "embeds": [{
+                "title": f"📊 TrendRadar 热点分析报告 - {report_type}",
+                "description": f"生成时间：{now.strftime('%Y-%m-%d %H:%M:%S')}\n\n[📄 点击查看完整报告]({report_url})",
+                "color": 3447003,  # 蓝色
+                "footer": {
+                    "text": "TrendRadar News Aggregation"
+                },
+                "timestamp": now.isoformat()
+            }]
+        }
+        
+        try:
+            response = requests.post(
+                webhook_url, headers=headers, json=link_embed, proxies=proxies, timeout=30
+            )
+            if response.status_code == 204:
+                print(f"Discord报告链接发送成功 [{report_type}]")
+                first_message_sent = True
+                time.sleep(1)  # Discord限流控制
+            else:
+                print(f"Discord报告链接发送失败，状态码：{response.status_code}")
+                try:
+                    print(f"错误详情：{response.text}")
+                except:
+                    pass
+        except Exception as e:
+            print(f"Discord报告链接发送出错：{e}")
+    
+    # 逐批发送新闻摘要
+    success_count = 0
+    for i, batch_content in enumerate(batches, 1):
+        # 添加批次标识
+        if total_batches > 1:
+            batch_header = f"**[第 {i}/{total_batches} 批次]**\n\n"
+            batch_content = batch_header + batch_content
+        
+        # Discord的Markdown需要转换
+        # 替换企业微信格式为Discord格式
+        batch_content = batch_content.replace("**", "**")  # Discord也支持**粗体**
+        
+        # 构建embed消息
+        embed_data = {
+            "embeds": [{
+                "title": f"📰 {report_type}" if i == 1 else f"📰 {report_type} (续 {i})",
+                "description": batch_content[:4000],  # Discord embed description限制4096字符，保守设置4000
+                "color": 15844367,  # 金色
+                "footer": {
+                    "text": f"更新时间: {now.strftime('%Y-%m-%d %H:%M:%S')}"
+                }
+            }]
+        }
+        
+        # 如果是第一批且有版本更新信息
+        if i == 1 and update_info and CONFIG["SHOW_VERSION_UPDATE"]:
+            version_text = f"\n\n⚠️ **发现新版本**：{update_info['remote_version']} (当前: {update_info['current_version']})"
+            embed_data["embeds"][0]["description"] += version_text
+        
+        try:
+            response = requests.post(
+                webhook_url, headers=headers, json=embed_data, proxies=proxies, timeout=30
+            )
+            if response.status_code == 204:
+                print(f"Discord第 {i}/{total_batches} 批次发送成功 [{report_type}]")
+                success_count += 1
+                # Discord限流：每个webhook每秒最多5个请求
+                if i < total_batches:
+                    time.sleep(0.5)
+            else:
+                print(f"Discord第 {i}/{total_batches} 批次发送失败，状态码：{response.status_code}")
+                try:
+                    error_data = response.json()
+                    print(f"错误详情：{error_data}")
+                except:
+                    print(f"错误详情：{response.text}")
+                # 如果是429限流错误，等待后重试
+                if response.status_code == 429:
+                    retry_after = 5
+                    try:
+                        error_data = response.json()
+                        retry_after = error_data.get("retry_after", 5)
+                    except:
+                        pass
+                    print(f"Discord限流，等待 {retry_after} 秒后重试...")
+                    time.sleep(retry_after)
+                    # 重试一次
+                    retry_response = requests.post(
+                        webhook_url, headers=headers, json=embed_data, proxies=proxies, timeout=30
+                    )
+                    if retry_response.status_code == 204:
+                        print(f"Discord第 {i}/{total_batches} 批次重试成功 [{report_type}]")
+                        success_count += 1
+        except Exception as e:
+            print(f"Discord第 {i}/{total_batches} 批次发送出错 [{report_type}]：{e}")
+    
+    # 判断整体发送是否成功
+    total_expected = total_batches
+    if first_message_sent:
+        success_count += 1
+        total_expected += 1
+    
+    if success_count >= total_batches:  # 至少所有新闻批次都成功
+        print(f"Discord发送完成：{success_count}/{total_expected} 条消息成功 [{report_type}]")
+        return True
+    elif success_count > 0:
+        print(f"Discord部分发送成功：{success_count}/{total_expected} 条消息 [{report_type}]")
+        return True
+    else:
+        print(f"Discord发送完全失败 [{report_type}]")
+        return False
+
+
 # === 主分析器 ===
 class NewsAnalyzer:
     """新闻分析器"""
@@ -4119,6 +4315,7 @@ class NewsAnalyzer:
                     and CONFIG["EMAIL_TO"]
                 ),
                 (CONFIG["NTFY_SERVER_URL"] and CONFIG["NTFY_TOPIC"]),
+                CONFIG["DISCORD_WEBHOOK_URL"],
             ]
         )
 
