@@ -22,6 +22,7 @@
 [![飞书通知](https://img.shields.io/badge/飞书-通知-00D4AA?style=flat-square)](https://www.feishu.cn/)
 [![邮件通知](https://img.shields.io/badge/Email-通知-00D4AA?style=flat-square)](#) 
 [![ntfy通知](https://img.shields.io/badge/ntfy-通知-00D4AA?style=flat-square)](https://github.com/binwiederhier/ntfy)
+[![Discord通知](https://img.shields.io/badge/Discord-通知-00D4AA?style=flat-square)](https://discord.com/)
 
 
 [![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-自动化-2088FF?style=flat-square&logo=github-actions&logoColor=white)](https://github.com/sansan0/TrendRadar)
@@ -255,7 +256,7 @@
 
 ### **多渠道实时推送**
 
-支持**企业微信**(+ 微信推送方案)、**飞书**、**钉钉**、**Telegram**、**邮件**、**ntfy**，消息直达手机和邮箱
+支持**企业微信**(+ 微信推送方案)、**飞书**、**钉钉**、**Telegram**、**邮件**、**ntfy**、**Discord**，消息直达手机和邮箱
 
 ### **多端适配**
 - **GitHub Pages**：自动生成精美网页报告，PC/移动端适配
@@ -1008,6 +1009,55 @@ frequency_words.txt 文件增加了一个【必须词】功能，使用 + 号
 
    </details>
 
+   <details>
+   <summary>👉 点击展开：<strong>Discord Webhook</strong>（游戏社区首选）</summary>
+   <br>
+
+   **GitHub Secret 配置（⚠️ Name 名称必须严格一致）：**
+   - **Name（名称）**：`DISCORD_WEBHOOK_URL`（请复制粘贴此名称，不要手打）
+   - **Secret（值）**：你的 Discord Webhook URL
+
+   <br>
+
+   **Webhook 设置步骤：**
+
+   1. **创建 Webhook（仅 PC/Web 端支持）**：
+      - 打开 Discord，进入目标频道
+      - 点击频道名称旁的设置图标（⚙️）→ "整合" (Integrations)
+      - 点击 "Webhook" → "新建 Webhook"
+
+   2. **配置 Webhook**：
+      - 设置 Webhook 名称（如 "TrendRadar"）
+      - 选择要发送消息的频道
+      - （可选）上传自定义头像
+
+   3. **获取 Webhook URL**：
+      - 点击 "复制 Webhook URL"
+      - URL 格式类似：`https://discord.com/api/webhooks/123456789/AbCdEfGhIjKlMnOpQrStUvWxYz`
+
+   4. **配置到 GitHub Secrets**：
+      - 将复制的 URL 配置到 `DISCORD_WEBHOOK_URL`
+
+   **特点说明：**
+   - ✅ 支持富文本格式（Embed 消息）
+   - ✅ 自动生成 GitHub Pages 报告链接
+   - ✅ 支持消息分批发送（超长消息自动分批）
+   - ✅ 美观的卡片式消息展示
+   - ⚠️ 消息长度限制：单条 Embed 最多 6000 字符
+   - ⚠️ 限流控制：每个 Webhook 每秒最多 5 个请求
+
+   **消息格式：**
+   - 第一条消息：包含报告标题、生成时间和 GitHub Pages 链接
+   - 后续消息：新闻内容摘要（分批发送）
+   - 支持 Markdown 格式的粗体、链接等
+
+   **注意事项：**
+   - 移动端只能接收消息，无法创建新 Webhook
+   - 请妥善保管 Webhook URL，不要公开分享
+   - 删除 Webhook 后，原 URL 将失效
+
+   </details>
+
 3. **手动测试新闻推送**：
 
    > 💡 **完成第1-2步后，请立即测试！** 测试成功后再根据需要调整配置（第4步）。
@@ -1400,6 +1450,7 @@ docker run -d --name trend-radar \
   -e EMAIL_FROM="你的发件邮箱" \
   -e EMAIL_PASSWORD="你的邮箱密码或授权码" \
   -e EMAIL_TO="收件人邮箱" \
+  -e DISCORD_WEBHOOK_URL="你的Discord_webhook_url" \
   -e CRON_SCHEDULE="*/30 * * * *" \
   -e RUN_MODE="cron" \
   -e IMMEDIATE_RUN="true" \
