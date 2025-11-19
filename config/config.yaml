@@ -27,6 +27,13 @@ crawler:
 report:
   mode: "daily" # Options: "daily"|"incremental"|"current"
   rank_threshold: 5 # Ranking highlight threshold
+  
+  # Translation settings
+  # Auto-translate all headlines from Chinese to English
+  translation:
+    enabled: false # Enable auto-translation of headlines to English
+    show_original: true # Show original Chinese text alongside translation
+    cache_translations: true # Cache translations to avoid duplicate API calls
 
 notification:
   enable_notification: true # Enable notification feature, if false, no mobile notifications will be sent

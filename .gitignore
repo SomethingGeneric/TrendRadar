@@ -39,3 +39,4 @@ Thumbs.db
 # Project specific
 output/
 config/config.yaml.local
+.translation_cache.json
