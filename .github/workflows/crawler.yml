@@ -2,11 +2,11 @@ name: Hot News Crawler
 
 on:
   schedule:
-    # 我们使用的是 github 官方提供的资源来进行的推送，而每个账号的资源是限额的，为了不被官方判定为滥用而面临封号的风险，不建议比半小时更低
-    - cron: "0 * * * *" # 每小时整点运行一次(实际有偏差) 或者 "*/30 * * * *" (每半小时执行一次) 或者 "*/30 0-14 * * *"(每天早上 8 点到晚上 10 点期间，每半小时运行一次)
+    # We use GitHub's official resources for pushing. Each account has resource limits. To avoid being flagged for abuse and account suspension, we don't recommend intervals shorter than 30 minutes
+    - cron: "0 * * * *" # Run every hour at the top of the hour (actual timing may vary) or "*/30 * * * *" (every 30 minutes) or "*/30 0-14 * * *" (every 30 minutes between 8 AM and 10 PM Beijing time)
   workflow_dispatch:
 
-# 添加权限设置
+# Add permission settings
 permissions:
   contents: write
 
@@ -30,21 +30,21 @@ jobs:
 
       - name: Verify required files
         run: |
-          echo "🔍 检查必需的配置文件..."
+          echo "🔍 Checking required configuration files..."
 
           if [ ! -f config/config.yaml ]; then
-            echo "❌ 错误: config/config.yaml 文件不存在"
-            echo "请参考项目文档创建配置文件"
+            echo "❌ Error: config/config.yaml file not found"
+            echo "Please refer to project documentation to create configuration file"
             exit 1
           fi
 
           if [ ! -f config/frequency_words.txt ]; then
-            echo "❌ 错误: config/frequency_words.txt 文件不存在"
-            echo "请参考项目文档创建频率词配置文件"
+            echo "❌ Error: config/frequency_words.txt file not found"
+            echo "Please refer to project documentation to create frequency words configuration file"
             exit 1
           fi
 
-          echo "✅ 配置文件检查通过"
+          echo "✅ Configuration file check passed"
 
       - name: Run crawler
         env:
