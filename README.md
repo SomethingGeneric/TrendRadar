@@ -192,10 +192,18 @@
 - 凤凰网
 - 今日头条
 - 微博
+- Hacker News
 
-默认监控 11 个主流平台，也可自行增加额外的平台
+默认监控 12 个主流平台，也可自行增加额外的平台
 
 > 💡 详细配置教程见 [配置详解 - 平台配置](#1-平台配置)
+
+### **智能URL去重**
+
+- 自动识别并去除跨平台的重复链接
+- 在关键词匹配前进行去重，提高效率
+- 智能URL标准化（去除协议、参数等）
+- 特别适用于同时监控多个技术资讯平台的场景
 
 ### **智能推送策略**
 
@@ -1113,8 +1121,18 @@ platforms:
     name: "百度热搜"
   - id: "wallstreetcn-hot"
     name: "华尔街见闻"
+  - id: "hackernews"
+    name: "Hacker News"
   # 添加更多平台...
 ```
+
+**注意事项**：
+- ✅ **已支持**: Hacker News (`hackernews`) - 已在默认配置中启用，支持URL去重
+- ⚠️ **暂不支持**: Lobsters (lobste.rs) 和 LWN.net 目前在 newsnow API 中不可用
+  - 如需这些平台，可以向 [newsnow 项目](https://github.com/ourongxing/newsnow/issues) 提交功能请求
+  - 或者等待社区贡献自定义爬虫实现
+- 🔄 **自动去重**: 当监控多个技术资讯平台时（如 Hacker News 等），系统会自动识别并去除相同URL的重复内容
+
 如果不会看的话，就直接复制他人整理好的部分[平台配置](https://github.com/sansan0/TrendRadar/issues/95)
 
 </details>
