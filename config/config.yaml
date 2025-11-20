@@ -107,3 +107,5 @@ platforms:
     name: "Douyin (抖音)"
   - id: "zhihu"
     name: "Zhihu (知乎)"
+  - id: "hackernews"
+    name: "Hacker News"

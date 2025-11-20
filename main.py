@@ -1045,6 +1045,108 @@ def detect_latest_new_titles(current_platform_ids: Optional[List[str]] = None) -
     return new_titles
 
 
+# === URL Deduplication ===
+def normalize_url(url: str) -> str:
+    """Normalize URL for deduplication by removing common variations"""
+    if not url:
+        return ""
+    
+    # Remove protocol (http/https)
+    normalized = url.lower()
+    normalized = normalized.replace("https://", "").replace("http://", "")
+    
+    # Remove www. prefix
+    normalized = normalized.replace("www.", "")
+    
+    # Remove trailing slashes
+    normalized = normalized.rstrip("/")
+    
+    # Remove common query parameters that don't change content
+    # (e.g., tracking parameters)
+    if "?" in normalized:
+        base_url, params = normalized.split("?", 1)
+        # Keep only essential parameters, remove tracking ones
+        param_pairs = params.split("&")
+        essential_params = []
+        tracking_prefixes = ["utm_", "ref", "source", "campaign"]
+        
+        for param in param_pairs:
+            if "=" in param:
+                key = param.split("=")[0]
+                # Keep parameter if it's not a tracking parameter
+                if not any(key.startswith(prefix) for prefix in tracking_prefixes):
+                    essential_params.append(param)
+        
+        if essential_params:
+            normalized = base_url + "?" + "&".join(essential_params)
+        else:
+            normalized = base_url
+    
+    return normalized
+
+
+def deduplicate_by_url(results: Dict) -> Dict:
+    """Deduplicate news items based on URL across all sources
+    
+    When the same URL appears in multiple sources (e.g., Hacker News and Lobsters),
+    keep only the first occurrence. This deduplication happens before keyword matching.
+    
+    Args:
+        results: Dictionary mapping source_id to title_data
+        
+    Returns:
+        Deduplicated results dictionary with the same structure
+    """
+    url_to_source_title = {}  # normalized_url -> (source_id, title)
+    deduplicated_results = {}
+    duplicate_count = 0
+    
+    # First pass: build URL index
+    for source_id, titles_data in results.items():
+        for title, title_data in titles_data.items():
+            url = title_data.get("url", "")
+            mobile_url = title_data.get("mobileUrl", "")
+            
+            # Try both URLs for matching
+            normalized_url = normalize_url(url) if url else ""
+            normalized_mobile_url = normalize_url(mobile_url) if mobile_url else ""
+            
+            # Use the first non-empty URL
+            key_url = normalized_url or normalized_mobile_url
+            
+            if key_url:
+                if key_url not in url_to_source_title:
+                    # First occurrence - record it
+                    url_to_source_title[key_url] = (source_id, title)
+                else:
+                    # Duplicate found
+                    original_source, original_title = url_to_source_title[key_url]
+                    duplicate_count += 1
+                    print(f"  URL dedup: '{title}' from '{source_id}' duplicates '{original_title}' from '{original_source}'")
+    
+    # Second pass: build deduplicated results
+    for source_id, titles_data in results.items():
+        deduplicated_results[source_id] = {}
+        
+        for title, title_data in titles_data.items():
+            url = title_data.get("url", "")
+            mobile_url = title_data.get("mobileUrl", "")
+            
+            normalized_url = normalize_url(url) if url else ""
+            normalized_mobile_url = normalize_url(mobile_url) if mobile_url else ""
+            key_url = normalized_url or normalized_mobile_url
+            
+            # Include this item only if it's the first occurrence of this URL
+            # or if it has no URL (can't deduplicate)
+            if not key_url or url_to_source_title.get(key_url) == (source_id, title):
+                deduplicated_results[source_id][title] = title_data
+    
+    if duplicate_count > 0:
+        print(f"URL deduplication: removed {duplicate_count} duplicate items")
+    
+    return deduplicated_results
+
+
 # === 统计和分析 ===
 def calculate_news_weight(
     title_data: Dict, rank_threshold: int = CONFIG["RANK_THRESHOLD"]
@@ -4760,6 +4862,10 @@ class NewsAnalyzer:
         results, id_to_name, failed_ids = self.data_fetcher.crawl_websites(
             ids, self.request_interval
         )
+
+        # Apply URL-based deduplication before saving
+        print("应用URL去重...")
+        results = deduplicate_by_url(results)
 
         title_file = save_titles_to_file(results, id_to_name, failed_ids)
         print(f"标题已保存到: {title_file}")
