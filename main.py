@@ -21,11 +21,11 @@ import yaml
 
 # Translation support
 try:
-    from googletrans import Translator
+    from deep_translator import GoogleTranslator
     TRANSLATION_AVAILABLE = True
 except ImportError:
     TRANSLATION_AVAILABLE = False
-    print("Warning: googletrans not installed. Translation feature will be disabled.")
+    print("Warning: deep-translator not installed. Translation feature will be disabled.")
 
 
 VERSION = "3.0.5"
@@ -83,11 +83,13 @@ class TranslationManager:
         self.cache_enabled = CONFIG["TRANSLATION"]["CACHE_TRANSLATIONS"]
         
         if self.enabled and TRANSLATION_AVAILABLE:
-            self.translator = Translator()
+            # Initialize translator with default target language
+            # We'll create new instances with different parameters when needed
+            self.translator = None
             if self.cache_enabled:
                 self._load_cache()
         elif self.enabled and not TRANSLATION_AVAILABLE:
-            print("Warning: Translation enabled but googletrans not available")
+            print("Warning: Translation enabled but deep-translator not available")
             self.enabled = False
     
     def _load_cache(self):
@@ -122,11 +124,9 @@ class TranslationManager:
         
         # Translate
         try:
-            if not self.translator:
-                self.translator = Translator()
-            
-            result = self.translator.translate(text, src=src, dest=dest)
-            translation = result.text
+            # Create translator with specific source and target languages
+            translator = GoogleTranslator(source=src, target=dest)
+            translation = translator.translate(text)
             
             # Cache the result
             if self.cache_enabled:
