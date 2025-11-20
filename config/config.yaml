@@ -107,3 +107,12 @@ platforms:
     name: "Douyin (抖音)"
   - id: "zhihu"
     name: "Zhihu (知乎)"
+    # Add Western platforms
+  - id: "hackernews"
+    name: "Hacker News"
+  - id: "reddit-popular"
+    name: "Reddit Popular"
+  - id: "producthunt"
+    name: "Product Hunt"
+  - id: "github-trending"
+    name: "GitHub Trending"
