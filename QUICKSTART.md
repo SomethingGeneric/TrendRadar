@@ -2,19 +2,27 @@
 
 Welcome! This guide will help you quickly set up TrendRadar to monitor Western news sources.
 
+> **📖 New: Complete Setup Guide Available!**  
+> For a comprehensive guide with Discord webhook, GitHub Pages, and detailed explanations of all default sources, see **[SETUP.md](SETUP.md)**
+
 ## 🚀 30-Second Setup
 
 ### 1. Fork & Configure
 
 1. **Fork** this repository to your GitHub account
 2. **Add notification channel** (choose one):
-   - Telegram (recommended for beginners)
+   - Discord (recommended - simple setup, see [SETUP.md](SETUP.md#discord-webhook-setup))
+   - Telegram (good for mobile)
    - Email
    - Any other supported channel
 
 ### 2. Set Up Secrets
 
 Go to your forked repo: `Settings` > `Secrets and variables` > `Actions` > `New repository secret`
+
+**For Discord:**
+- Name: `DISCORD_WEBHOOK_URL` → Value: Your Discord webhook URL
+- See [SETUP.md](SETUP.md#discord-webhook-setup) for detailed instructions
 
 **For Telegram:**
 - Name: `TELEGRAM_BOT_TOKEN` → Value: Your bot token

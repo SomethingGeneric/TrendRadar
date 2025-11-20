@@ -44,10 +44,10 @@
 
 <div align="center">
 
-| [🎯 Core Features](#-core-features) | [🚀 Quick Start](#-quick-start) | [⚙️ Configuration Guide](#-configuration-guide) | [🐳 Docker Deployment](#-docker-deployment) |
+| [🎯 Core Features](#-core-features) | [🚀 Quick Start](#-quick-start) | [📖 Setup Guide](SETUP.md) | [⚙️ Configuration Guide](#-configuration-guide) |
 |:---:|:---:|:---:|:---:|
-| [🤖 AI Analysis](#-ai-analysis) | [🔌 MCP Clients](#-mcp-clients) | [📝 Changelog](#-changelog) | [❓ FAQ & Support](#-faq--support) |
-| [⭐ Related Projects](#-related-projects) | [🪄 Sponsors](#-sponsors) | | |
+| [🐳 Docker Deployment](#-docker-deployment) | [🤖 AI Analysis](#-ai-analysis) | [🔌 MCP Clients](#-mcp-clients) | [📝 Changelog](#-changelog) |
+| [❓ FAQ & Support](#-faq--support) | [⭐ Related Projects](#-related-projects) | [🪄 Sponsors](#-sponsors) | |
 
 </div>
 
@@ -959,11 +959,48 @@ frequency_words.txt file added **required word** feature, using + sign
 
    </details>
 
+   <details>
+   <summary> <strong>👉 Click to expand: Discord Webhook</strong> (Simple setup, popular platform)</summary>
+   <br>
+
+   **GitHub Secret Configuration (⚠️ Name must match exactly):**
+   - **Name**: `DISCORD_WEBHOOK_URL` (Please copy and paste this name, do not type manually)
+   - **Secret (Value)**: Your Discord webhook URL
+
+   <br>
+
+   **Webhook Setup Steps:**
+
+   1. **Open Discord** and navigate to your server
+   2. **Right-click on a text channel** → Select **"Edit Channel"**
+   3. **Click "Integrations"** in the left sidebar
+   4. **Click "Create Webhook"** (or "View Webhooks" if you have existing webhooks)
+   5. **Click "New Webhook"** button
+   6. **Configure the webhook**:
+      - **Name**: `TrendRadar` (or any name you prefer)
+      - **Channel**: Select the channel where notifications should appear
+      - **Icon**: Optional - upload a custom icon
+   7. **Click "Copy Webhook URL"** - save this URL
+   8. **Click "Save"**
+
+   Your webhook URL will look like:
+   ```
+   https://discord.com/api/webhooks/123456789012345678/abcdefghijklmnopqrstuvwxyz
+   ```
+
+   9. **Add to GitHub Secrets**: Paste the URL into `DISCORD_WEBHOOK_URL` secret
+
+   **Note**: For detailed setup with screenshots, see [SETUP.md](SETUP.md#discord-webhook-setup)
+
+   </details>
+
    > **💡 Beginner Quick Start Tip**:
    >
    > For first deployment, suggest completing **GitHub Secrets** configuration first (choose one push platform), then jump to [Step 3] to test push success.
    >
    > **Don't modify** `config/config.yaml` and `frequency_words.txt` temporarily, adjust these configs after push test succeeds as needed.
+   >
+   > 📖 **For detailed setup guide with Discord + GitHub Pages**, see **[SETUP.md](SETUP.md)**
 
 
 3. **Manual Test News Push**:
@@ -1004,6 +1041,34 @@ frequency_words.txt file added **required word** feature, using + sign
 > **📖 Reminder**: This chapter provides detailed configuration explanations. Suggest completing [Quick Start](#-quick-start) basic configuration first, then refer to detailed options here as needed.
 
 ### 1. Platform Configuration
+
+> **📖 Quick Reference**: For a complete setup guide including default sources and adding HackerNews, see **[SETUP.md](SETUP.md#default-news-sources)**
+
+<details id="default-sources">
+<summary>👉 Click to expand: <strong>Default News Sources (11 Chinese Platforms)</strong></summary>
+<br>
+
+TrendRadar comes pre-configured with 11 major Chinese news platforms:
+
+| Platform | ID | Description | Content Type |
+|----------|-------|-------------|--------------|
+| **Zhihu (知乎)** | `zhihu` | Chinese Q&A platform, intellectual discussions | Tech, Science, Culture |
+| **Weibo (微博)** | `weibo` | Chinese Twitter, celebrity and social news | Entertainment, Social, Breaking News |
+| **Douyin (抖音)** | `douyin` | Chinese TikTok, viral video trends | Viral Content, Entertainment |
+| **Bilibili** | `bilibili-hot-search` | Video platform, gaming and anime trends | Gaming, Anime, Youth Culture |
+| **Baidu (百度)** | `baidu` | China's largest search engine trends | General News, Search Trends |
+| **Toutiao (今日头条)** | `toutiao` | News aggregator, personalized content | General News, Local Stories |
+| **Tieba (贴吧)** | `tieba` | Forum community, niche interests | Community Discussions |
+| **Wallstreetcn (华尔街见闻)** | `wallstreetcn-hot` | Financial news platform | Finance, Economics, Markets |
+| **Yicai (财联社)** | `cls-hot` | Financial and business news | Business, Finance |
+| **Thepaper (澎湃新闻)** | `thepaper` | News media, investigative journalism | Politics, Society, Investigation |
+| **iFeng (凤凰网)** | `ifeng` | News portal, current affairs | Current Affairs, Politics |
+
+These platforms are configured in `config/config.yaml` and represent the most popular news sources in China.
+
+**Want Western sources?** See [SETUP.md - Adding Western Sources](SETUP.md#adding-western-sources) for HackerNews, Reddit, Product Hunt, and more.
+
+</details>
 
 <details id="custom-monitoring-platforms">
 <summary>👉 Click to expand: <strong>Custom Monitoring Platforms</strong></summary>
